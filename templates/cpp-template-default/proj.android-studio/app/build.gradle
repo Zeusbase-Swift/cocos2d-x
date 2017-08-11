@@ -14,13 +14,13 @@ android {
         versionName "1.0"
 
         externalNativeBuild {
-            ndkBuild {
-                if (!project.hasProperty("PROP_NDK_MODE") || PROP_NDK_MODE.compareTo('none') != 0) {
+            if (!project.hasProperty("PROP_NDK_MODE") || PROP_NDK_MODE == 'ndk') {
+                ndkBuild {
                     // skip the NDK Build step if PROP_NDK_MODE is none
                     targets 'MyGame'
                     arguments 'NDK_TOOLCHAIN_VERSION=4.9'
                     arguments 'APP_PLATFORM=android-'+PROP_APP_PLATFORM
-                    
+
                     def module_paths = [project.file("../../cocos2d").absolutePath,
                                         project.file("../../cocos2d/cocos").absolutePath,
                                         project.file("../../cocos2d/external").absolutePath]
@@ -32,23 +32,23 @@ android {
                     else {
                         arguments 'NDK_MODULE_PATH=' + module_paths.join(':')
                     }
-                    
+
                     arguments '-j' + Runtime.runtime.availableProcessors()
-                    abiFilters.addAll(PROP_APP_ABI.split(':').collect{it as String})
+                }
+            }
+            else if (PROP_NDK_MODE == 'cmake') {
+                cmake {
+                    arguments "-DCMAKE_FIND_ROOT_PATH=", "-DANDROID_STL=c++_static", "-DANDROID_TOOLCHAIN=clang", "-DANDROID_ARM_NEON=TRUE", \
+                              "-DBUILD_CPP_EMPTY_TEST=FALSE", "-DBUILD_LUA_LIBS=FALSE", "-DBUILD_JS_LIBS=FALSE", "-DUSE_CHIPMUNK=TRUE", "-DUSE_BULLET=TRUE"
+                    cppFlags "-frtti -fexceptions"
                 }
             }
         }
-        
-        //externalNativeBuild {
-        //    cmake {
-        //        arguments "-DCMAKE_FIND_ROOT_PATH=", "-DANDROID_STL=c++_static", "-DANDROID_TOOLCHAIN=clang", "-DANDROID_ARM_NEON=TRUE", "-DUSE_CHIPMUNK=TRUE", "-DUSE_BULLET=TRUE"
-        //        cppFlags "-frtti -fexceptions"
-        //    }
-        //}
-        
-        //ndk {
-        //    abiFilters.addAll(PROP_APP_ABI.split(':').collect{it as String})
-        //}
+
+        ndk {
+            abiFilters = []
+            abiFilters.addAll(PROP_APP_ABI.split(':').collect{it as String})
+        }
         
     }
 
@@ -60,19 +60,18 @@ android {
     }
 
     externalNativeBuild {
-        ndkBuild {
-            if (!project.hasProperty("PROP_NDK_MODE") || PROP_NDK_MODE.compareTo('none') != 0) {
+        if (!project.hasProperty("PROP_NDK_MODE") || PROP_NDK_MODE == 'ndk') {
+            ndkBuild {
                 // skip the NDK Build step if PROP_NDK_MODE is none
                 path "jni/Android.mk"
             }
         }
+        else if (PROP_NDK_MODE == 'cmake') {
+            cmake {
+                path "../../CMakeLists.txt"
+            }
+        }
     }
-    
-    //externalNativeBuild {
-    //    cmake {
-    //        path "../../CMakeLists.txt"
-    //    }
-    //}
 
     signingConfigs {
 
